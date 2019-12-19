@@ -1,0 +1,54 @@
+version: '3'
+services:
+  zelos_react_mongo:
+    container_name: zelos_react_mongo
+    image: mongo
+    ports:
+      - "27019:27017"
+    volumes:
+      - db:/data/db
+
+  zelos_react_backend:
+    build:
+      context: ../zelos_react/backend
+      dockerfile: ../zelos_react/backend/Dockerfile
+    environment:
+      SECRET: "d7037517b12d4450a9cf37e30f834c4e"
+      NODE_ENV: production
+      DATABASE_PORT: 27017
+    restart: always
+    volumes:
+      - 'uploads:/home/node/uploads'
+
+  zelos_nginx:
+    container_name: zelos_nginx
+    restart: always
+    build:
+      context: nginx
+      dockerfile: nginx/Dockerfile
+    volumes:
+      - 'uploads:/var/www/zelos_uploads'
+      - certbot-etc:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    ports:
+      - 80:80
+      - 443:443
+    links:
+      - zelos_react_backend
+
+  certbot:
+    container_name: certbot
+    depends_on:
+      - zelos_nginx
+    build:
+      context: nginx
+      dockerfile: nginx/certbot.Dockerfile
+    volumes:
+      - certbot-www:/var/www/certbot
+      - certbot-etc:/etc/letsencrypt
+
+volumes:
+  certbot-etc:
+  certbot-www:
+  uploads:
+  db:
