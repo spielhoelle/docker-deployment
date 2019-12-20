@@ -26,6 +26,8 @@ FROM nginx:1.12-alpine
 #ARG CACHEBUST=1
 RUN mkdir -p /var/www/certbot
 COPY nginx.conf /etc/nginx/nginx.conf
+COPY conf.d/extsnd.com.conf /etc/nginx/conf.d/extsnd.com.conf
+COPY conf.d/pwa.tmy.io.conf /etc/nginx/conf.d/pwa.tmy.io.conf
 
 #COPY ./certs/tmy.io.crt /etc/nginx/certs/tmy.io.crt
 #COPY ./certs/tmy.io.key /etc/nginx/certs/tmy.io.key

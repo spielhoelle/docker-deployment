@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#docker-compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint "certbot certonly --webroot -w /var/www/certbot --staging --email spielhoelle@posteo.net -d extsnd.com -d pwa.tmy.io --rsa-key-size 4096 --agree-tos --force-renewal --staging" certbot
+#docker-compose run --rm --entrypoint "certbot certonly --webroot -w /var/www/certbot --staging --email spielhoelle@posteo.net -d extsnd.com -d pwa.tmy.io --rsa-key-size 4096 --agree-tos --force-renewal --staging" certbot
 if ! [ -x "$(command -v docker-compose)" ]; then
   echo 'Error: docker-compose is not installed.' >&2
   exit 1
@@ -13,11 +13,12 @@ for file in "${files[@]}"; do
 done
 
 echo $file_args
-domains=(extsnd.com pwa.tmy.io)
+domains=(pwa.tmy.io)
+#domains=(extsnd.com)
 rsa_key_size=4096
 data_path="./nginx"
 email="spielhoelle@posteo.net" # Adding a valid address is strongly recommended
-staging=1 # Set to 1 if you're testing your setup to avoid hitting request limits
+staging=0 # Set to 1 if you're testing your setup to avoid hitting request limits
 
 #if [ -d "$data_path" ]; then
 #  read -p "Existing data found for $domains. Continue and replace existing certificate? (y/N) " decision
@@ -37,7 +38,7 @@ staging=1 # Set to 1 if you're testing your setup to avoid hitting request limit
 
 echo "### Creating dummy certificate for $domains ..."
 path="/etc/letsencrypt/live/$domains"
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint "\
+docker-compose run --rm --entrypoint "\
    openssl req -x509 -nodes -newkey rsa:1024 -days 1\
     -keyout '$path/privkey.pem' \
     -out '$path/fullchain.pem' \
@@ -46,11 +47,11 @@ echo
 
 
 echo "### Starting nginx ..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --force-recreate -d zelos_nginx
+docker-compose up --force-recreate -d zelos_react_nginx
 echo
 
 echo "### Deleting dummy certificate for $domains ..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint "\
+docker-compose run --rm --entrypoint "\
   rm -Rf /etc/letsencrypt/live/$domains && \
   rm -Rf /etc/letsencrypt/archive/$domains && \
   rm -Rf /etc/letsencrypt/renewal/$domains.conf" certbot
@@ -73,7 +74,7 @@ esac
 # Enable staging mode if needed
 if [ $staging != "0" ]; then staging_arg="--staging"; fi
 
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entrypoint "\
+docker-compose run --rm --entrypoint "\
   certbot certonly --webroot -w /var/www/certbot \
     $staging_arg \
     $email_arg \
@@ -84,7 +85,7 @@ docker-compose -f docker-compose.yml -f docker-compose.prod.yml run --rm --entry
 echo
 
 
-docker cp ./nginx/conf.d zelos_nginx:/etc/nginx
+docker cp ./nginx/conf.d zelos_react_nginx:/etc/nginx
 
-echo "### Reloading zelos_nginx ..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec zelos_nginx nginx -s reload
+echo "### Reloading zelos_react_nginx ..."
+docker-compose exec zelos_react_nginx nginx -s reload

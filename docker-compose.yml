@@ -9,9 +9,8 @@ services:
       - db:/data/db
 
   zelos_react_backend:
-    build:
-      context: ../zelos_react/backend
-      dockerfile: ../zelos_react/backend/Dockerfile
+    container_name: zelos_react_backend
+    image: zelos_react_backend:latest
     environment:
       SECRET: "d7037517b12d4450a9cf37e30f834c4e"
       NODE_ENV: production
@@ -20,12 +19,10 @@ services:
     volumes:
       - 'uploads:/home/node/uploads'
 
-  zelos_nginx:
-    container_name: zelos_nginx
+  zelos_react_nginx:
+    container_name: zelos_react_nginx
+    image: zelos_react_nginx:latest
     restart: always
-    build:
-      context: nginx
-      dockerfile: nginx/Dockerfile
     volumes:
       - 'uploads:/var/www/zelos_uploads'
       - certbot-etc:/etc/letsencrypt
@@ -38,11 +35,9 @@ services:
 
   certbot:
     container_name: certbot
+    image: certbot/certbot:latest
     depends_on:
-      - zelos_nginx
-    build:
-      context: nginx
-      dockerfile: nginx/certbot.Dockerfile
+      - zelos_react_nginx
     volumes:
       - certbot-www:/var/www/certbot
       - certbot-etc:/etc/letsencrypt
